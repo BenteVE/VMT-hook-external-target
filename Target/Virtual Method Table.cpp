@@ -1,51 +1,39 @@
-/*
-    SOURCES:
-        -
-
-    PROJECT SETTINGS:
-        - 
-
-    INFO:
-        - USAGE:
-            This is a test application that has a class with virtual functions. 
-            When the companion DLL is injected in this application,
-            it will install a hook on the Virtual Method Table. This will overwrite the
-            functions of this application with the functions from the DLL.
-
-        -
-
-*/
+// A simple application that uses a Virtual Method Table
 
 #include "Classes.h"
 #include <Windows.h>
 
-// When you refer to a derived class object using a pointer or a reference to the base class, 
-// you can call a virtual function for that object and execute the derived class's version of the function.
 void callFunctions(Base* pBase) {
-    pBase->function1();
-    pBase->function2();
+	pBase->function1();
+	pBase->function2();
 }
 
 int main()
 {
-    
+	// Wait for an input to start using the functions 
+	// while waiting, we can inject the DLL that installs the Virtual Method Table (VMT) hook
+	system("pause");
 
-	// Wait for an input to start using the functions (while waiting, you can inject the DLL with the VTable hook)
-    system("pause");
+	// Here we are calling the functions in the derived class with a pointer to the base class
+	// In this case, the VMT will be used for functions defined as virtual in the base class
+	// Note: in the Base class, only function2() is defined as virtual, 
+	// so only function2() will appear in the VMT, and we can only hook that function
+	std::cout << "Calling the functions with a pointer to the base class:" << std::endl;
+	Base* pBase = new Derived();
+	pBase->function1();
+	pBase->function2();
 
-    // Test to determine if hook is correctly installed
-    Derived derived;
-    Base* pBase2 = new Derived();
+	Derived derived;
+	callFunctions(&derived);
 
-    // When refering to a derived class with a pointer to the base class, the VTable will be used if the function is defined as virtual in the base class
-    pBase2->function1(); //not hooked
-    pBase2->function2(); //hooked
-    callFunctions(&derived); //not hooked, hooked
+	// When calling function2() without a pointer to the base class, 
+	// the VMT will not be used, so the hook will not be executed
+	std::cout << "Calling the functions without a pointer to the base class:" << std::endl;
+	derived.function1();
+	derived.function2();
 
-    //result: function2 is hooked both times
-
-    // Wait to be able to read output
-    system("pause");
+	// Wait to be able to read output before closing
+	system("pause");
 
 	return 0;
 }

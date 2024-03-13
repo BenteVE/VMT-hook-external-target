@@ -1,43 +1,77 @@
 // A simple application that uses a Virtual Method Table
 
-#include "Classes.h"
+#include "Animal.h"
 #include <Windows.h>
+#include <vector>
 
-void callFunctions(Base* pBase) {
-	pBase->function1();
-	pBase->function2();
-}
+#include <tchar.h> // using _tmain macro
+#include <conio.h> // using _getch
 
 int main()
 {
-	// Wait for an input to start using the functions 
-	// while waiting, we can inject the DLL that installs the Virtual Method Table (VMT) hook
-	std::cout << "Pausing the program, the hook can now be installed:" << std::endl;
-	system("pause");
+	// Creating a vector of animals
+	std::vector<Animal*> animals;
 
-	std::cout << std::endl << "Creating the classes:" << std::endl;
-	Base* pBase = new Derived();
-	Derived derived;
-	
-	// Here we are calling the functions in the derived class with a pointer to the base class
-	// In this case, the VMT will be used for functions defined as virtual in the base class
-	// Note: in the Base class, only function2() is defined as virtual, 
-	// so only function2() will appear in the VMT, and we can only hook that function
-	std::cout << std::endl << "Calling the functions with a pointer to the base class:" << std::endl;
-	pBase->function1();
-	pBase->function2();
+	// Using getch in a while loop to provide options
+	int ch = ' ';
+	while (true) {
+		switch (ch) {
+		case 'Q': return 0;
+		case 'A':
+		{
+			std::cout << std::endl;
+			Animal a;
+			animals.push_back(&a);
+			break;
+		}
+		case 'C':
+		{
+			std::cout << std::endl;
+			Cat c;
+			animals.push_back(&c);
+			break;
+		}
+		case 'D':
+		{
+			std::cout << std::endl;
+			Dog d;
+			animals.push_back(&d);
+			break;
+		}
+		case 'M':
+		{
+			std::cout << std::endl << "Letting all animals make their move" << std::endl;
+			for (Animal* animal : animals) {
+				// Note: the move() method in the Animal class is not defined as virtual,
+				// so all animals (cats and dogs) will move like generic animals
+				animal->move();
+			}
+			break;
+		}
+		case 'N':
+		{
+			std::cout << std::endl << "Letting all animals make their noise" << std::endl;
+			for (Animal* animal : animals) {
+				// Note: the call() method in the Animal class is defined as virtual,
+				// so the VMT will be used to determine which function should be executed at runtime
+				animal->call();
+			}
+			break;
+		}
+		default:
+		{
+			std::cout << std::endl;
+			std::cout << "Press 'A' to create a generic animal" << std::endl;
+			std::cout << "Press 'C' to create a cat" << std::endl;
+			std::cout << "Press 'D' to create a dog" << std::endl;
+			std::cout << "Press 'M' to let the animals move" << std::endl;
+			std::cout << "Press 'N' to let the animals make their noise" << std::endl;
+			std::cout << "Press 'Q' to quit" << std::endl;
+			break;
+		}
+		}
 
-	std::cout << std::endl;
-	
-	callFunctions(&derived);
-
-	// When calling function2() without a pointer to the base class, 
-	// the VMT will not be used, so the hook will not be executed
-	std::cout << std::endl << "Calling the functions directly with the derived class:" << std::endl;
-	derived.function1();
-	derived.function2();
-
-	std::cout << std::endl << "Destroying the classes:" << std::endl;
-
-	return 0;
+		ch = _gettch();
+		ch = toupper(ch);
+	}
 }

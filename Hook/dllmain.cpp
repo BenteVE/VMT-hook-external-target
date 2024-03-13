@@ -4,9 +4,8 @@
 //we use this to store and call the original function inside our custom one
 // when defining a thiscall, we always have to give the pointer ourselves
 // (this pointer is automatically added by the compiler when the function is called through a class, when it is instead called with a pointer, you would have to add it manually)
-//typedef void(__thiscall* VirtualFunction01_t)(void* thisptr);
-//VirtualFunction01_t g_org_VirtualFunction01; //used to store original function address
-
+typedef void(__thiscall* VirtualFunction)(void* thisptr);
+VirtualFunction g_org_VirtualFunction; //used to store original function address
 
 // We will execute this function instead of the real one
 // __thiscall calling convention is used on C++ class member functions on the x86 architecture (https://docs.microsoft.com/en-us/cpp/cpp/thiscall?view=msvc-170)
@@ -15,23 +14,14 @@
 // we use __fastcall for our hook to so we can easily access the this pointer from the original __thiscall convention that the original function used
 // if we would use __thiscall for our hook instead, we wouldn't get access to the pointer as easily because the this pointer is not explicitly mentionned in the parameters
 void __fastcall hook(void* pEcx, void* pEdx) {
-	//Base* object = (Base*)pEcx; //argument in register ecx is a pointer to this object
+	//argument in register ecx is a pointer to this object
 	std::cout << "This function was hooked" << std::endl;
-
+	std::cout << "Address of the object: " << std::hex << pEcx << std::endl;
+	
 	//call the original function
-	//g_org_VirtualFunction01(thisptr);
+	std::cout << "Calling the original function... " << std::endl;
+	g_org_VirtualFunction(pEcx);
 }
-/*
-// werkt dit ook of kunnen we argument in Ecx niet bereiken met thiscall? (niet mogelijk om thiscall te definiëren buiten klasse?)
-void __thiscall hook(void* Ecx, void* arg1, ...) {
-	//Base* object = (Base*)pEcx; //argument in register ecx is a pointer to this object
-	std::cout << "This function was hooked" << std::endl;
-
-	//call the original function
-	//g_org_VirtualFunction01(thisptr);
-}
-*/
-
 
 DWORD WINAPI installVTableHook() {
 
@@ -44,9 +34,9 @@ DWORD WINAPI installVTableHook() {
 	std::cout << "Module base: " << std::hex << base << std::endl;
 
 	// For the target program with x86 architecture,
-	// this is the offset of the second function in the Virtual Method Table of the Base class
+	// this is the offset of the call() function in the VMT of the Cat class
 	// This offset can be found by analyzing the program with for example Ghidra
-	UINT_PTR offset = 0x336C;
+	UINT_PTR offset = 0x337c;
 	std::cout << "Offset: " << std::hex << offset << std::endl;
 
 	// A pointer to the address in the VMT that we will overwrite to install the hook
@@ -55,6 +45,9 @@ DWORD WINAPI installVTableHook() {
 
 	// Check the original content of the VMT, this is the true address of function2() of the derived class
 	std::cout << "Content of the VMT: " << std::hex << *pHook << std::endl;
+
+	// Store the original contents of the VMT:
+	g_org_VirtualFunction = (VirtualFunction)*pHook;
 
 	// Install hook
 	DWORD oldProtect = 0;

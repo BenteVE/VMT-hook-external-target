@@ -1,10 +1,6 @@
 #include <iostream>
 #include <Windows.h>
 
-#include "Console.h"
-
-Console console;
-
 //we use this to store and call the original function inside our custom one
 // when defining a thiscall, we always have to give the pointer ourselves
 // (this pointer is automatically added by the compiler when the function is called through a class, when it is instead called with a pointer, you would have to add it manually)
@@ -39,23 +35,26 @@ void __thiscall hook(void* Ecx, void* arg1, ...) {
 
 DWORD WINAPI installVTableHook() {
 
-	//find base address of module program 
+	// Find base address of target program (.exe)
 	UINT_PTR base = (UINT_PTR)GetModuleHandle(NULL);
 	if (base == NULL) {
-		fprintf(console.stream, "Module handle not found\n");
+		std::cout << "Module handle not found" << std::endl;
 		return FALSE;
 	}
+	std::cout << "Module base: " << std::hex << base << std::endl;
 
 	// For the target program with x86 architecture,
-	// this is the offset of the second function in the Virtual Method Table of the Derived class
+	// this is the offset of the second function in the Virtual Method Table of the Base class
 	// This offset can be found by analyzing the program with for example Ghidra
-	UINT_PTR offset = 0x3274;
+	UINT_PTR offset = 0x336C;
+	std::cout << "Offset: " << std::hex << offset << std::endl;
 
 	// A pointer to the address in the VMT that we will overwrite to install the hook
 	PUINT_PTR pHook = (PUINT_PTR)(base + offset);
+	std::cout << "Hook address: " << std::hex << pHook << std::endl;
 
 	// Check the original content of the VMT, this is the true address of function2() of the derived class
-	fprintf(console.stream, "Content of the VMT: %x", *pHook);
+	std::cout << "Content of the VMT: " << std::hex << *pHook << std::endl;
 
 	// Install hook
 	DWORD oldProtect = 0;
@@ -64,7 +63,7 @@ DWORD WINAPI installVTableHook() {
 	VirtualProtect(pHook, sizeof(UINT_PTR), oldProtect, &oldProtect);
 
 	// Check if the content is correctly overwritten
-	fprintf(console.stream, "Content of the VMT: %x", *pHook);
+	std::cout << "Content of the VMT: " << std::hex << *pHook << std::endl;
 
 	return TRUE;
 }
@@ -76,15 +75,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 
 	case DLL_PROCESS_ATTACH:
 	{
-		// The DisableThreadLibraryCalls function lets a DLL disable the DLL_THREAD_ATTACH and DLL_THREAD_DETACH notification calls.
-		// This can be a useful optimization for multithreaded applications that have many DLLs, frequently createand delete threads, 
-		// and whose DLLs do not need these thread - level notifications of attachment/detachment.
-		DisableThreadLibraryCalls(hModule);
-
-		if (!console.open()) {
-			// Indicate DLL loading failed
-			return FALSE;
-		}
+		std::cout << std::endl << "Installing the hook..." << std::endl;
 
 		// install hook
 		CreateThread(nullptr, NULL, LPTHREAD_START_ROUTINE(installVTableHook), NULL, NULL, nullptr);
@@ -94,11 +85,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 	case DLL_THREAD_ATTACH: break;
 	case DLL_THREAD_DETACH: break;
 	case DLL_PROCESS_DETACH: {
-		fprintf(console.stream, "Uninstalling the hook ...\n");
-
-		// Open a MessageBox to allow reading the output
-		MessageBoxW(NULL, L"Press Ok to close", L"Closing", NULL);
-
+		std::cout << std::endl << "Uninstalling the hook..." << std::endl;
 		return TRUE;
 	}
 	}

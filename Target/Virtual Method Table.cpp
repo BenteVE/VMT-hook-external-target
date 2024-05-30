@@ -10,13 +10,16 @@
 int main()
 {
 	// Creating a vector of animals
-	std::vector<Animal*> animals;
+	std::vector<Animal *> animals;
 
 	// Using getch in a while loop to provide options
 	int ch = ' ';
-	while (true) {
-		switch (ch) {
-		case 'Q': return 0;
+	while (true)
+	{
+		switch (ch)
+		{
+		case 'Q':
+			return 0;
 		case 'A':
 		{
 			std::cout << std::endl;
@@ -40,8 +43,10 @@ int main()
 		}
 		case 'M':
 		{
-			std::cout << std::endl << "Letting all animals make their move" << std::endl;
-			for (Animal* animal : animals) {
+			std::cout << std::endl
+					  << "Letting all animals make their move" << std::endl;
+			for (Animal *animal : animals)
+			{
 				// Note: the move() method in the Animal class is not defined as virtual,
 				// so all animals (cats and dogs) will move like generic animals
 				animal->move();
@@ -50,8 +55,10 @@ int main()
 		}
 		case 'N':
 		{
-			std::cout << std::endl << "Letting all animals make their noise" << std::endl;
-			for (Animal* animal : animals) {
+			std::cout << std::endl
+					  << "Letting all animals make their noise" << std::endl;
+			for (Animal *animal : animals)
+			{
 				// Note: the call() method in the Animal class is defined as virtual,
 				// so the VMT will be used to determine which function should be executed at runtime
 				animal->call();
